@@ -8,8 +8,15 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.join(BASE_DIR, "models", "combined_model.pkl")
 vectorizer_path = os.path.join(BASE_DIR, "models", "tfidf_vectorizer.pkl")
 
-model = pickle.load(open(model_path, "rb"))
-vectorizer = pickle.load(open(vectorizer_path, "rb"))
+@st.cache_resource
+def load_artifacts():       
+    with open(model_path, "rb") as f:
+        model = pickle.load(f)
+    with open(vectorizer_path, "rb") as f:
+        vectorizer = pickle.load(f)
+    return model, vectorizer
+
+model, vectorizer = load_artifacts()
 
 st.title("AI Text Detection System")
 
