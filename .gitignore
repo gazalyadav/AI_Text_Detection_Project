@@ -1,0 +1,32 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.env/
+
+# VS Code settings
+.vscode/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Large model files
+bert_model/
+models/bert_detector/
+
+# Test data
+test_pdfs/
+*.pdf
+
+# Mac system files
+.DS_Store
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp

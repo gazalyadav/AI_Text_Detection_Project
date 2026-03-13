@@ -1,0 +1,14 @@
+{
+    "python.analysis.indexing": false,
+    "python.analysis.autoImportCompletions": false,
+    "python.analysis.useLibraryCodeForTypes": false,
+    "files.watcherExclude": {
+        "**/venv/**": true,
+        "**/data/**": true,
+        "**/__pycache__/**": true
+    },
+    "search.exclude": {
+        "**/venv": true,
+        "**/data": true
+    }
+}
