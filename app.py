@@ -1,14 +1,19 @@
 import streamlit as st
 import pickle
+import os
 import numpy as np
 
-# load models
-model = pickle.load(open("models/combined_model.pkl", "rb"))
-vectorizer = pickle.load(open("models/tfidf_vectorizer.pkl", "rb"))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+model_path = os.path.join(BASE_DIR, "models", "combined_model.pkl")
+vectorizer_path = os.path.join(BASE_DIR, "models", "tfidf_vectorizer.pkl")
+
+model = pickle.load(open(model_path, "rb"))
+vectorizer = pickle.load(open(vectorizer_path, "rb"))
 
 st.title("AI Text Detection System")
 
-st.write("Paste text below to analyze whether it is AI generated.")
+st.write("Paste text below to check if it is AI generated.")
 
 text = st.text_area("Enter text")
 
@@ -19,6 +24,7 @@ if st.button("Analyze"):
 
     else:
         X = vectorizer.transform([text])
+
         prob = model.predict_proba(X)[0][1]
 
         ai_percent = prob * 100
