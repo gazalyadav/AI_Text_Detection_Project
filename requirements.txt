@@ -1,6 +1,8 @@
-streamlit
+fastapi
+uvicorn
+python-multipart
+pypdf
+joblib
 scikit-learn
 numpy
 pandas
-joblib
-pypdf
