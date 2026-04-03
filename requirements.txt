@@ -1,8 +1,10 @@
 fastapi
 uvicorn
+transformers
+torch
+PyPDF2
+python-docx
 python-multipart
-pypdf
-joblib
-scikit-learn
-numpy
-pandas
+jinja2
+huggingface_hub
+safetensors

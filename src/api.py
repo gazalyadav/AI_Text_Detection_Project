@@ -1,5 +1,7 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.templating import Jinja2Templates
+from fastapi.requests import Request
 from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
@@ -18,9 +20,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+templates = Jinja2Templates(directory="src/templates")
+
 # ── Load RoBERTa model ────────────────────────────────────────────────────────
-DEVICE    = "mps" if torch.backends.mps.is_available() else "cpu"
-MODEL_DIR = "src/models/saved/roberta"
+from huggingface_hub import snapshot_download
+import os
+
+DEVICE    = "cpu"  # Render free tier has no GPU
+MODEL_DIR = "roberta_model"
+
+if not os.path.exists(MODEL_DIR):
+    print("Downloading model from HuggingFace...")
+    snapshot_download(
+        repo_id="gazalyadav/ai-text-detector-roberta",
+        local_dir=MODEL_DIR
+    )
 
 print("Loading model...")
 tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR)
@@ -81,8 +95,11 @@ class TextInput(BaseModel):
     text: str
 
 @app.get("/")
-def root():
-    return {"message": "AI Text Detector API is running!"}
+async def root(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html"
+    )
 
 @app.post("/detect/text")
 def detect_text(inp: TextInput):

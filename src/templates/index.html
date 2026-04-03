@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Text Detector</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    header .logo {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+
+    header .logo span { color: #6c47ff; }
+
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      height: calc(100vh - 57px);
+    }
+
+    /* ── Left panel ── */
+    .left-panel {
+      background: #fff;
+      border-right: 1px solid #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      gap: 16px;
+    }
+
+    .tab-bar {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 12px;
+    }
+
+    .tab {
+      padding: 7px 18px;
+      border-radius: 20px;
+      border: 1px solid #e0e0e0;
+      background: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      color: #555;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      background: #6c47ff;
+      color: #fff;
+      border-color: #6c47ff;
+    }
+
+    textarea {
+      flex: 1;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 15px;
+      resize: none;
+      outline: none;
+      color: #1a1a1a;
+      line-height: 1.6;
+      font-family: inherit;
+    }
+
+    textarea:focus { border-color: #6c47ff; }
+
+    textarea::placeholder { color: #aaa; }
+
+    .upload-area {
+      flex: 1;
+      border: 2px dashed #d0d0d0;
+      border-radius: 10px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      color: #888;
+    }
+
+    .upload-area:hover { border-color: #6c47ff; color: #6c47ff; }
+
+    .upload-area.active { display: flex; }
+
+    .upload-icon { font-size: 40px; }
+
+    .upload-area p { font-size: 15px; }
+
+    .upload-area span { font-size: 13px; color: #aaa; }
+
+    #file-input { display: none; }
+
+    .file-selected {
+      background: #f0ebff;
+      border: 1px solid #c9b8ff;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #6c47ff;
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .bottom-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .word-count { font-size: 13px; color: #aaa; }
+
+    .scan-btn {
+      background: #6c47ff;
+      color: #fff;
+      border: none;
+      padding: 11px 28px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .scan-btn:hover { background: #5535dd; }
+    .scan-btn:disabled { background: #c4b5ff; cursor: not-allowed; }
+
+    /* ── Right panel ── */
+    .right-panel {
+      background: #fafafa;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+    }
+
+    .result-header {
+      font-size: 17px;
+      font-weight: 700;
+      color: #1a1a1a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .placeholder-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: #bbb;
+      text-align: center;
+    }
+
+    .placeholder-state .big-icon { font-size: 48px; }
+    .placeholder-state p { font-size: 15px; }
+
+    /* Result card */
+    .result-card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e0e0e0;
+      padding: 24px;
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .verdict {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .verdict-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .verdict-icon.ai    { background: #fff0f0; }
+    .verdict-icon.human { background: #f0fff4; }
+
+    .verdict-label {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+
+    .verdict-sub { font-size: 14px; color: #888; margin-top: 2px; }
+
+    /* Score bar */
+    .score-section { display: flex; flex-direction: column; gap: 10px; }
+
+    .score-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      color: #555;
+      font-weight: 500;
+    }
+
+    .bar-track {
+      height: 10px;
+      background: #f0f0f0;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.8s ease;
+    }
+
+    .bar-fill.ai    { background: linear-gradient(90deg, #ff6b6b, #ff4757); }
+    .bar-fill.human { background: linear-gradient(90deg, #6bcb77, #2ed573); }
+
+    /* Stats grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .stat-box {
+      background: #f7f7f7;
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .stat-label { font-size: 12px; color: #999; margin-bottom: 4px; }
+    .stat-value { font-size: 18px; font-weight: 700; color: #1a1a1a; }
+
+    /* Loading */
+    .loading {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      flex: 1;
+      color: #888;
+    }
+
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid #e0e0e0;
+      border-top-color: #6c47ff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-box {
+      background: #fff0f0;
+      border: 1px solid #ffcccc;
+      border-radius: 10px;
+      padding: 14px 18px;
+      color: #cc3333;
+      font-size: 14px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">AI<span>Detect</span></div>
+  <span style="font-size:13px;color:#888;margin-left:8px;">
+    Powered by RoBERTa
+  </span>
+</header>
+
+<div class="container">
+
+  <!-- ── Left panel ── -->
+  <div class="left-panel">
+    <div class="tab-bar">
+      <button class="tab active" onclick="switchTab('text')">📝 Paste Text</button>
+      <button class="tab"        onclick="switchTab('file')">📁 Upload File</button>
+    </div>
+
+    <!-- Text input -->
+    <textarea id="text-input" placeholder="Type or paste your text here to check if it's AI-generated or human-written..."></textarea>
+
+    <!-- File upload -->
+    <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+      <div class="upload-icon">📂</div>
+      <p>Click to upload or drag & drop</p>
+      <span>Supports .txt, .pdf, .docx</span>
+      <input type="file" id="file-input" accept=".txt,.pdf,.docx"
+             onchange="handleFileSelect(this)"/>
+    </div>
+
+    <div class="file-selected" id="file-selected">
+      <span>📄</span>
+      <span id="file-name"></span>
+    </div>
+
+    <div class="bottom-bar">
+      <span class="word-count" id="word-count">0 words</span>
+      <button class="scan-btn" id="scan-btn" onclick="scan()">
+        Scan for AI
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Right panel ── -->
+  <div class="right-panel">
+    <div class="result-header">🔍 Detection Results</div>
+
+    <!-- Placeholder -->
+    <div class="placeholder-state" id="placeholder">
+      <div class="big-icon">🤖</div>
+      <p>Add your text or upload a file<br/>and click <strong>Scan for AI</strong></p>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <span>Analyzing text...</span>
+    </div>
+
+    <!-- Error -->
+    <div class="error-box" id="error-box"></div>
+
+    <!-- Result card -->
+    <div class="result-card" id="result-card">
+
+      <div class="verdict">
+        <div class="verdict-icon" id="verdict-icon"></div>
+        <div>
+          <div class="verdict-label" id="verdict-label"></div>
+          <div class="verdict-sub"  id="verdict-sub"></div>
+        </div>
+      </div>
+
+      <div class="score-section">
+        <div class="score-row">
+          <span>🤖 AI-Generated</span>
+          <span id="ai-pct"></span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill ai" id="ai-bar" style="width:0%"></div>
+        </div>
+
+        <div class="score-row" style="margin-top:8px">
+          <span>✍️ Human-Written</span>
+          <span id="human-pct"></span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill human" id="human-bar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-label">Confidence</div>
+          <div class="stat-value" id="stat-confidence"></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Word Count</div>
+          <div class="stat-value" id="stat-words"></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">File Name</div>
+          <div class="stat-value" id="stat-file"
+               style="font-size:13px;word-break:break-all">—</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Model</div>
+          <div class="stat-value" style="font-size:14px">RoBERTa</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentTab = "text";
+  let selectedFile = null;
+
+  // ── Tab switching ──────────────────────────────────────────────────────────
+  function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll(".tab").forEach((t, i) => {
+      t.classList.toggle("active", (tab === "text" ? 0 : 1) === i);
+    });
+    document.getElementById("text-input").style.display  =
+      tab === "text" ? "block" : "none";
+    document.getElementById("upload-area").style.display =
+      tab === "file" ? "flex"  : "none";
+    document.getElementById("upload-area").classList.toggle("active", tab === "file");
+    updateWordCount();
+  }
+
+  // ── Word count ─────────────────────────────────────────────────────────────
+  document.getElementById("text-input").addEventListener("input", updateWordCount);
+  function updateWordCount() {
+    const txt   = document.getElementById("text-input").value.trim();
+    const words = txt ? txt.split(/\s+/).length : 0;
+    document.getElementById("word-count").textContent =
+      currentTab === "text" ? `${words} words` : (selectedFile ? "File ready" : "No file");
+  }
+
+  // ── File select ────────────────────────────────────────────────────────────
+  function handleFileSelect(input) {
+    if (!input.files.length) return;
+    selectedFile = input.files[0];
+    document.getElementById("file-name").textContent    = selectedFile.name;
+    document.getElementById("file-selected").style.display = "flex";
+    updateWordCount();
+  }
+
+  // ── UI states ──────────────────────────────────────────────────────────────
+  function showLoading() {
+    document.getElementById("placeholder").style.display  = "none";
+    document.getElementById("result-card").style.display  = "none";
+    document.getElementById("error-box").style.display    = "none";
+    document.getElementById("loading").style.display      = "flex";
+  }
+
+  function showError(msg) {
+    document.getElementById("loading").style.display   = "none";
+    document.getElementById("error-box").style.display = "block";
+    document.getElementById("error-box").textContent   = "⚠️ " + msg;
+  }
+
+  function showResult(data) {
+    document.getElementById("loading").style.display      = "none";
+    document.getElementById("result-card").style.display  = "flex";
+
+    const isAI = data.label === "AI-Generated";
+
+    document.getElementById("verdict-icon").textContent  = isAI ? "🤖" : "✍️";
+    document.getElementById("verdict-icon").className    =
+      "verdict-icon " + (isAI ? "ai" : "human");
+    document.getElementById("verdict-label").textContent = data.label;
+    document.getElementById("verdict-sub").textContent   =
+      isAI ? "This text appears to be machine-generated."
+           : "This text appears to be written by a human.";
+
+    document.getElementById("ai-pct").textContent    = data.ai_score + "%";
+    document.getElementById("human-pct").textContent = data.human_score + "%";
+
+    setTimeout(() => {
+      document.getElementById("ai-bar").style.width    = data.ai_score + "%";
+      document.getElementById("human-bar").style.width = data.human_score + "%";
+    }, 100);
+
+    document.getElementById("stat-confidence").textContent =
+      data.confidence + "%";
+    document.getElementById("stat-words").textContent =
+      data.word_count || "—";
+    document.getElementById("stat-file").textContent =
+      data.filename || "—";
+  }
+
+  // ── Scan ───────────────────────────────────────────────────────────────────
+  async function scan() {
+    const btn = document.getElementById("scan-btn");
+    btn.disabled = true;
+    showLoading();
+
+    try {
+      let response;
+
+      if (currentTab === "text") {
+        const text = document.getElementById("text-input").value.trim();
+        if (!text) { showError("Please enter some text first."); btn.disabled=false; return; }
+
+        response = await fetch("/detect/text", {
+          method : "POST",
+          headers: { "Content-Type": "application/json" },
+          body   : JSON.stringify({ text })
+        });
+
+      } else {
+        if (!selectedFile) { showError("Please select a file first."); btn.disabled=false; return; }
+        const form = new FormData();
+        form.append("file", selectedFile);
+        response = await fetch("/detect/file", { method: "POST", body: form });
+      }
+
+      const data = await response.json();
+      if (data.error) { showError(data.error); }
+      else            { showResult(data); }
+
+    } catch (e) {
+      showError("Could not connect to server. Is the API running?");
+    }
+
+    btn.disabled = false;
+  }
+</script>
+</body>
+</html>
