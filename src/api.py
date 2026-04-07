@@ -26,13 +26,13 @@ templates = Jinja2Templates(directory="src/templates")
 from huggingface_hub import snapshot_download
 import os
 
-DEVICE    = "cpu"  # Render free tier has no GPU
-MODEL_DIR = "roberta_model"
+DEVICE    = "cpu"
+MODEL_DIR = "deberta_model"
 
 if not os.path.exists(MODEL_DIR):
-    print("Downloading model from HuggingFace...")
+    print("Downloading DeBERTa model from HuggingFace...")
     snapshot_download(
-        repo_id="gazalyadav/ai-text-detector-roberta",
+        repo_id="gazalyadav/ai-text-detector-deberta",
         local_dir=MODEL_DIR
     )
 
